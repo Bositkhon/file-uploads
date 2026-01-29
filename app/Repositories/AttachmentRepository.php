@@ -44,4 +44,13 @@ class AttachmentRepository
     {
         return Attachment::where('id', $id)->delete();
     }
+
+    public function countTodayByUserId(int $userId): int
+    {
+        return Attachment::query()
+            ->where('user_id', $userId)
+            ->where('created_at', '=', today())
+            ->whereIn('mime', ['image/jpeg', 'image/png'])
+            ->count();
+    }
 }
