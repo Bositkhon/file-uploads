@@ -21,6 +21,12 @@ class AttachmentService
     {
         $this->validateUploadLimit($userId, 1);
 
+        $contentHash = hash_file('sha256', $file->getRealPath());
+        $existing = $this->repository->findByContentHashAndUserId($contentHash, $userId);
+        if ($existing) {
+            return $existing;
+        }
+
         $path = $file->store('attachments');
 
         return $this->repository->create(
@@ -30,6 +36,7 @@ class AttachmentService
             extension: $file->getClientOriginalExtension(),
             mime: $file->getMimeType(),
             size: $file->getSize(),
+            contentHash: $contentHash,
         );
     }
 
@@ -43,29 +50,30 @@ class AttachmentService
     {
         $this->validateUploadLimit($userId, count($files));
 
-        $attachments = [];
+        $results = collect();
 
         foreach ($files as $file) {
-            $path = $file->store('attachments');
+            $contentHash = hash_file('sha256', $file->getRealPath());
+            $existing = $this->repository->findByContentHashAndUserId($contentHash, $userId);
+            if ($existing) {
+                $results->push($existing);
+                continue;
+            }
 
-            $attachments[] = [
-                'user_id' => $userId,
-                'path' => $path,
-                'original_name' => $file->getClientOriginalName(),
-                'extension' => $file->getClientOriginalExtension(),
-                'mime' => $file->getMimeType(),
-                'size' => $file->getSize(),
-            ];
+            $path = $file->store('attachments');
+            $attachment = $this->repository->create(
+                userId: $userId,
+                path: $path,
+                originalName: $file->getClientOriginalName(),
+                extension: $file->getClientOriginalExtension(),
+                mime: $file->getMimeType(),
+                size: $file->getSize(),
+                contentHash: $contentHash,
+            );
+            $results->push($attachment);
         }
 
-        return DB::transaction(fn () => collect($attachments)->map(fn ($attachment) => $this->repository->create(
-            userId: $attachment['user_id'],
-            path: $attachment['path'],
-            originalName: $attachment['original_name'],
-            extension: $attachment['extension'],
-            mime: $attachment['mime'],
-            size: $attachment['size'],
-        )));
+        return $results;
     }
 
     /**

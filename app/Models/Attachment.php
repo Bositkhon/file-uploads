@@ -14,6 +14,7 @@ class Attachment extends Model
         'original_name',
         'mime',
         'size',
+        'content_hash',
     ];
 
     public function user()
