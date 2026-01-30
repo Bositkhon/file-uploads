@@ -15,7 +15,7 @@ class BatchUploadImageRequest extends FormRequest
     {
         return [
             'attachments'   => ['required', 'array', 'max:10'],
-            'attachments.*' => ['file', 'max:5120', 'mimes:jpg,png'],
+            'attachments.*' => ['file', 'max:5120', 'mimetypes:image/jpeg,image/png,application/octet-stream'],
         ];
     }
 }
