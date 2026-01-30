@@ -59,7 +59,7 @@ class AttachmentRepository
     {
         return Attachment::query()
             ->where('user_id', $userId)
-            ->where('created_at', '=', today())
+            ->whereDate('created_at', today())
             ->whereIn('mime', ['image/jpeg', 'image/png'])
             ->count();
     }
